@@ -14,8 +14,8 @@ import argparse
 import os
 import shutil 
 
-if os.path.exists("/content/WIP"):
-  shutil.rmtree("/content/WIP")
+if os.path.exists("/content/GameFormer"):
+  shutil.rmtree("/content/GameFormer")
   
 subprocess.run([
     "git", "clone", "https://github.com/MCZhi/GameFormer.git"
