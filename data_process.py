@@ -18,11 +18,11 @@ if os.path.exists("/content/WIP"):
   shutil.rmtree("/content/WIP")
   
 subprocess.run([
-    "git", "clone", "https://github.com/Rohith-Kumar-S/WIP.git"
+    "git", "clone", "https://github.com/MCZhi/GameFormer.git"
 ], check=True)
 
-from WIP.interaction_prediction.data_process import DataProcess
-from WIP.utils.data_utils import *
+from GameFormer.interaction_prediction.data_process import DataProcess
+from GameFormer.utils.data_utils import *
 
 class DataProcessv1(DataProcess):
     def __init__(self, root_dir, point_dir='', save_dir='', merger_save_path=''):
