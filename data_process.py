@@ -330,8 +330,8 @@ class DataProcessv1(DataProcess):
 def parallel_process(root_dir):
     print(root_dir)
     processor = DataProcessv1(root_dir=[root_dir], point_dir=point_path, save_dir=save_path, merger_save_path=merger_save_path)
-    if load_all_shards:
-        merge_sensors_with_scenario_wrapper(processor, args.shards_path) 
+    if not load_all_shards:
+        merge_sensors_with_scenario_wrapper(processor, shards_path) 
     if process_data:
         processor.process_data(viz=debug,test=test)
     print(f'{root_dir}-done!')
@@ -381,7 +381,7 @@ def main():
             p.map(parallel_process, data_files)
     else:
         processor = DataProcessv1(root_dir=data_files, point_dir=point_path, save_dir=save_path, merger_save_path=merger_save_path)
-        if load_all_shards:
+        if not load_all_shards:
             merge_sensors_with_scenario_wrapper(processor, shards_path)
         if process_data:
             processor.process_data(viz=debug,test=test)
