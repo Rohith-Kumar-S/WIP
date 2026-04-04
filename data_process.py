@@ -6,9 +6,6 @@ import tensorflow as tf
 from waymo_open_dataset.protos import scenario_pb2
 import argparse
 import os 
-import sys
-sys.path.append(os.path.abspath(".."))
-
 from interaction_predicition.data_process import DataProcess
 
 
