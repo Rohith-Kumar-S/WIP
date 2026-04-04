@@ -337,6 +337,7 @@ def parallel_process(root_dir):
     print(f'{root_dir}-done!')
     
 def merge_sensors_with_scenario_wrapper(processor, shards_path):
+    print("\nMerging sensors with scenario...")
     cmd = [
             "gsutil", "-m", "cp",
             "gs://waymo_open_dataset_motion_v_1_3_0/uncompressed/scenario/training/training.tfrecord-00000-of-01000",
