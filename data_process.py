@@ -14,14 +14,12 @@ import argparse
 import os
 import shutil 
 
-if os.path.exists("/content/GameFormer"):
-  shutil.rmtree("/content/GameFormer")
+if os.path.exists("/content/WIP/GameFormer"):
+  shutil.rmtree("/content/WIP/GameFormer")
   
-subprocess.run(
-    ["git", "clone", "https://github.com/MCZhi/GameFormer.git"],
-    cwd="/content",
-    check=True
-)
+subprocess.run([
+    "git", "clone", "https://github.com/MCZhi/GameFormer.git"
+], check=True)
 
 from GameFormer.interaction_prediction.data_process import DataProcess
 from GameFormer.utils.data_utils import *
