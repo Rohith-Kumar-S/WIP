@@ -20,7 +20,9 @@ if os.path.exists("/content/WIP/GameFormer"):
 subprocess.run([
     "git", "clone", "https://github.com/MCZhi/GameFormer.git"
 ], check=True)
-
+import sys
+sys.path.append('/content/WIP/GameFormer')
+sys.path.append('/content/WIP/GameFormer/interaction_prediction')
 from GameFormer.interaction_prediction.data_process import DataProcess
 from GameFormer.utils.data_utils import *
 
