@@ -346,6 +346,7 @@ def merge_sensors_with_scenario_wrapper(processor, shards_path):
             shards_path
         ]
     subprocess.run(cmd, check=True)
+    print("training.tfrecord-00000-of-01000 shard downloaded successfully.\n")
     filenames = tf.io.matching_files(os.path.join(shards_path, 'training.tfrecord-*'))        
     train_dataset = tf.data.TFRecordDataset(filenames, compression_type='')
     
