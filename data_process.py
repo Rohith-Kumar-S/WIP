@@ -29,6 +29,7 @@ from GameFormer.utils.data_utils import *
 class DataProcessv1(DataProcess):
     def __init__(self, root_dir, point_dir='', save_dir='', merger_save_path=''):
         super().__init__()
+        self.data_files = root_dir
         self.root_dir = root_dir
         self.point_dir = point_dir
         self.save_dir = save_dir
