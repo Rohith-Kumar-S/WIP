@@ -332,8 +332,8 @@ class DataProcessv1(DataProcess):
 def parallel_process(root_dir):
     print(root_dir)
     processor = DataProcessv1(root_dir=[root_dir], point_dir=point_path, save_dir=save_path, merger_save_path=merger_save_path)
-    if not load_all_shards:
-        merge_sensors_with_scenario_wrapper(processor, shards_path) 
+    if merge_sensors and not load_all_shards:
+        merge_sensors_with_scenario_wrapper(processor, shards_path)
     if process_data:
         processor.process_data(viz=debug,test=test)
     print(f'{root_dir}-done!')
@@ -357,6 +357,7 @@ def main():
     parser.add_argument('--shards_path', type=str, help='path to save processed data')
     parser.add_argument('--merger_save_path', type=str, help='path to save processed data')
     parser.add_argument('--load_all_shards',action='store_true',help='whether to load all shards')
+    parser.add_argument('--merge_sensors',action='store_true',help='whether to merge sensors with scenario')
     parser.add_argument('--process_data',action='store_true',help='whether to process data')
     parser.add_argument('--load_path', type=str, help='path to dataset files')
     parser.add_argument('--save_path', type=str, help='path to save processed data')
@@ -378,6 +379,8 @@ def main():
     load_all_shards = args.load_all_shards
     process_data = args.process_data
     shards_path = args.shards_path
+    merge_sensors = args.merge_sensors
+
     os.makedirs(save_path, exist_ok=True)
 
     if args.use_multiprocessing:
@@ -385,7 +388,7 @@ def main():
             p.map(parallel_process, data_files)
     else:
         processor = DataProcessv1(root_dir=data_files, point_dir=point_path, save_dir=save_path, merger_save_path=merger_save_path)
-        if not load_all_shards:
+        if merge_sensors and not load_all_shards:
             merge_sensors_with_scenario_wrapper(processor, shards_path)
         if process_data:
             processor.process_data(viz=debug,test=test)
