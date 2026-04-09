@@ -21,10 +21,10 @@ subprocess.run([
     "git", "clone", "--branch", "rohith", "https://github.com/ishanrai17/GameFusion.git"
 ], check=True)
 import sys
-sys.path.append('/content/WIP/GameFormer')
-sys.path.append('/content/WIP/GameFormer/interaction_prediction')
-from GameFormer.interaction_prediction.data_process import DataProcess
-from GameFormer.utils.data_utils import *
+sys.path.append('/content/WIP/GameFusion')
+sys.path.append('/content/WIP/GameFusion/interaction_prediction')
+from GameFusion.interaction_prediction.data_process import DataProcess
+from GameFusion.utils.data_utils import *
 
 class DataProcessv1(DataProcess):
     def __init__(self, root_dir, point_dir='', save_dir='', merger_save_path=''):
