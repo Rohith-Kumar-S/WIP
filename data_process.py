@@ -18,7 +18,7 @@ if os.path.exists("/content/WIP/GameFormer"):
   shutil.rmtree("/content/WIP/GameFormer")
   
 subprocess.run([
-    "git", "clone", "https://github.com/MCZhi/GameFormer.git"
+    "git", "clone", "--branch", "rohith", "https://github.com/ishanrai17/GameFusion.git"
 ], check=True)
 import sys
 sys.path.append('/content/WIP/GameFormer')
