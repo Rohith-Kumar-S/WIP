@@ -9,7 +9,7 @@ import numpy as np
 from shapely.geometry import Polygon
 from shapely.affinity import affine_transform, rotate
 from waymo_open_dataset.protos import scenario_pb2
-
+from waymo_open_dataset.utils import womd_lidar_utils
 import argparse
 import os
 import shutil 
@@ -246,6 +246,84 @@ class DataProcessv1(DataProcess):
 
       writer.close()
       print(f"Done! Merged: {merged} / {len(scenario_ids)}")
+      
+    
+    
+    
+    def extract_lidar_bev(self, points, x_min, x_max, y_min, y_max, z_min, z_max, xy_res, z_res):
+
+        grid_x = round((x_max - x_min) / xy_res)
+        grid_y = round((y_max - y_min) / xy_res)
+        grid_z = round((z_max - z_min) / z_res)
+
+        voxel_grid = np.zeros((grid_z, grid_x, grid_y), dtype=np.float32)
+
+        x_vals = points[:, 0]
+        y_vals = points[:, 1]
+        z_vals = points[:, 2]
+
+        # Correct formula: (value - min) / resolution
+        x_bins = ((x_vals - x_min) / xy_res).astype(int)
+        y_bins = ((y_vals - y_min) / xy_res).astype(int)
+        z_bins = ((z_vals - z_min) / z_res).astype(int)
+
+        # Clamp to valid range
+        mask = (
+            (0 <= x_bins) & (x_bins < grid_x) &
+            (0 <= y_bins) & (y_bins < grid_y) &
+            (0 <= z_bins) & (z_bins < grid_z)
+        )
+
+        voxel_grid[z_bins[mask], x_bins[mask], y_bins[mask]] = 1.0
+
+        return voxel_grid
+
+    def normalize_lidar_points(self, pts, center, angle):
+        """
+        Normalize LiDAR points by translating to the center and rotating by the negative angle.
+        """
+        # Translate
+        pts_norm = pts.copy()
+        pts_norm[:, 0] -= center[0]
+        pts_norm[:, 1] -= center[1]
+        
+        # Rotate by -angle (standard 2D rotation matrix)
+        cos_a = np.cos(-angle)
+        sin_a = np.sin(-angle)
+        x_rot = cos_a * pts_norm[:, 0] - sin_a * pts_norm[:, 1]
+        y_rot = sin_a * pts_norm[:, 0] + cos_a * pts_norm[:, 1]
+        
+        pts_norm[:, 0] = x_rot
+        pts_norm[:, 1] = y_rot
+        # Z unchanged
+        
+        return pts_norm
+    
+    def get_lidar_point(self, scenario):
+        all_frames = []
+        for frame in scenario.compressed_frame_laser_data:
+            pose = tf.constant(list(frame.pose.transform), dtype=tf.float64)
+            pose = tf.reshape(pose, [4, 4])
+            calibs = {c.name: c for c in frame.laser_calibrations}
+
+            all_points = []
+            for laser in frame.lasers:
+                calib = calibs[laser.name]
+                if laser.name == 1:
+                    xyz_ri1, _, xyz_ri2, _ = womd_lidar_utils.extract_top_lidar_points(
+                        laser, pose, calib)
+                else:
+                    xyz_ri1, _, xyz_ri2, _ = womd_lidar_utils.extract_side_lidar_points(
+                        laser, calib)
+                all_points.append(xyz_ri1.numpy())
+                all_points.append(xyz_ri2.numpy())
+
+            pts = np.concatenate(all_points, axis=0)
+            all_frames.append(pts)
+        
+        return all_frames
+
+        
         
     def process_data(self, viz=True,test=False):
         
@@ -285,6 +363,8 @@ class DataProcessv1(DataProcess):
                         self.sdc_ids_list = [(tracks_list,1)] 
                 else:
                     self.interactive_process(tracks_list, interact_list, parsed_data.tracks)
+                    
+                lidar_frames = self.get_lidar_point(parsed_data)
 
                 for pairs in self.sdc_ids_list:
                     sdc_ids, interesting = pairs[0], pairs[1]                   
@@ -310,7 +390,15 @@ class DataProcessv1(DataProcess):
                     else:
                         ground_truth = self.ground_truth_process(sdc_ids, parsed_data.tracks)
                     ego, neighbors, map_lanes, map_crosswalks, ground_truth,region_dict = self.normalize_data(ego, neighbors, map_lanes, map_crosswalks, ground_truth, viz=viz)
-
+                    center, angle = np.array(self.current_xyzh[0][:2]), self.current_xyzh[0][3]
+                    bev_frames = []
+                    for lidar_pts in lidar_frames:
+                        lidar_pts_norm = self.normalize_lidar_points(lidar_pts, center, angle)
+                        # bev = self.extract_lidar_bev(lidar_pts_norm, -74.8, 74.8, -74.8, 74.8, -2, 4, 0.2, 0.5)
+                        bev = self.extract_lidar_bev(lidar_pts_norm, -75, 75, -75, 75, -2, 4, 0.5, 0.5)
+                        bev_frames.append(bev)
+                    lidar_bev = np.array(bev_frames, dtype=np.uint8)
+                    
                     if self.point_dir == '':
                         region_dict = {6:np.zeros((6,2))}
                     # save data
@@ -319,11 +407,13 @@ class DataProcessv1(DataProcess):
                     if test:
                         np.savez(filename, ego=np.array(ego), neighbors=np.array(neighbors), map_lanes=np.array(map_lanes), 
                         map_crosswalks=np.array(map_crosswalks),object_type=np.array(object_type),region_6=np.array(region_dict[6]),
-                        object_index=np.array(object_index),current_state=np.array(self.current_xyzh[0]))
+                        object_index=np.array(object_index),current_state=np.array(self.current_xyzh[0]),
+                        lidar_bev=lidar_bev)
                     else:
                         np.savez(filename, ego=np.array(ego), neighbors=np.array(neighbors), map_lanes=np.array(map_lanes), 
                         map_crosswalks=np.array(map_crosswalks),object_type=np.array(object_type),region_6=np.array(region_dict[6]),
-                        object_index=np.array(object_index),current_state=np.array(self.current_xyzh[0]),gt_future_states=np.array(ground_truth))
+                        object_index=np.array(object_index),current_state=np.array(self.current_xyzh[0]),gt_future_states=np.array(ground_truth), 
+                        lidar_bev=lidar_bev)
                 
                 self.pbar.update(1)
 
